@@ -30,13 +30,19 @@ export const generateFortuneAnalysis = async (profile: UserProfile): Promise<For
     Birth Time: ${profile.birthTime}
     Zodiac: ${profile.zodiac}
 
-    Please provide a comprehensive fortune analysis in Chinese (Simplified).
-    1. Predict the yearly fortune based on Zi Wei Dou Shu.
-    2. Identify future important milestones (dates and events).
-    3. Analyze the provided face and ear images (if any) for personality and destiny traits (Physiognomy).
-    4. Provide a "Soul Color" (hex code) that represents their aura based on this analysis.
+    Please provide a comprehensive fortune analysis in **Simplified Chinese (简体中文)**.
     
-    Return the response in strict JSON format.
+    1. **Yearly Fortune**: Predict the yearly fortune based on Zi Wei Dou Shu.
+    2. **Milestones**: Identify future important milestones (dates and events).
+    3. **Physiognomy**: Analyze the provided face and ear images (if any) for personality and destiny traits. 
+       - Face Reading: General facial features (forehead, eyes, nose, mouth, chin).
+       - Ear Fortune: Wisdom, longevity, and early life luck.
+       - Mole Meanings: Analysis of visible moles (or general knowledge if none visible).
+       If no images are provided, provide general wisdom based on the zodiac.
+    4. **Soul Color**: Provide a hex code that represents their aura/soul color based on this analysis, along with a poetic Chinese name and its meaning.
+    5. **Similar Historical Figure**: Identify a famous historical figure (Chinese or World) who shares similar traits or destiny. Provide their Name and a brief Description of the similarity.
+    
+    Return the response in strict JSON format matching the schema.
   `;
 
   if (profile.faceImage) {
@@ -96,6 +102,13 @@ export const generateFortuneAnalysis = async (profile: UserProfile): Promise<For
               name: { type: Type.STRING },
               meaning: { type: Type.STRING }
             }
+          },
+          similarPerson: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              description: { type: Type.STRING }
+            }
           }
         }
       }
@@ -114,14 +127,16 @@ let chatSession: any = null;
 
 export const initializeChat = (profile: UserProfile, analysis: FortuneAnalysis) => {
   const systemInstruction = `
-    You are a mystic AI fortune teller using Zi Wei Dou Shu.
+    You are a mystic AI fortune teller (Oracle) using Zi Wei Dou Shu.
     You have already analyzed the user ${profile.name} (Born: ${profile.birthDate}).
     
     Here is their summary analysis:
     Yearly: ${analysis.yearlyFortune}
     Face Reading: ${analysis.physiognomy.faceAnalysis}
+    Similar Figure: ${analysis.similarPerson.name}
     
-    Answer their follow-up questions with a mysterious, wisdom-filled, yet helpful tone in Chinese (Simplified).
+    Answer their follow-up questions in **Simplified Chinese (简体中文)**.
+    Tone: Mysterious, starry, ancient wisdom mixed with futuristic clarity.
     Keep answers concise but profound.
   `;
 

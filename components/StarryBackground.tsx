@@ -14,41 +14,45 @@ const StarryBackground: React.FC = () => {
     canvas.width = width;
     canvas.height = height;
 
-    const stars: { x: number; y: number; size: number; opacity: number; speed: number }[] = [];
-    const numStars = 150;
+    const stars: { x: number; y: number; size: number; opacity: number; speed: number; color: string }[] = [];
+    const numStars = 200;
+    const colors = ['#ffffff', '#ffe9c4', '#d4fbff', '#f0e6ff'];
 
     for (let i = 0; i < numStars; i++) {
       stars.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        size: Math.random() * 2,
+        size: Math.random() * 1.5,
         opacity: Math.random(),
-        speed: Math.random() * 0.2 + 0.05
+        speed: Math.random() * 0.15 + 0.02,
+        color: colors[Math.floor(Math.random() * colors.length)]
       });
     }
 
     const animate = () => {
       ctx.clearRect(0, 0, width, height);
       
-      // Draw gradient background
-      const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, '#0B0216');
-      gradient.addColorStop(1, '#1E0B36');
+      // Draw gradient background - Deep Universe
+      const gradient = ctx.createRadialGradient(width/2, height, 0, width/2, height/2, width);
+      gradient.addColorStop(0, '#1a0b2e'); // Deep purple near bottom/center
+      gradient.addColorStop(0.4, '#0f0518');
+      gradient.addColorStop(1, '#05010a'); // Almost black edges
+      
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
       // Draw stars
-      ctx.fillStyle = '#FFF';
       stars.forEach(star => {
+        ctx.fillStyle = star.color;
         ctx.globalAlpha = star.opacity;
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
         ctx.fill();
 
         // Twinkle
-        star.opacity += (Math.random() - 0.5) * 0.05;
+        star.opacity += (Math.random() - 0.5) * 0.02;
         if (star.opacity < 0.1) star.opacity = 0.1;
-        if (star.opacity > 1) star.opacity = 1;
+        if (star.opacity > 0.8) star.opacity = 0.8;
 
         // Move
         star.y -= star.speed;
