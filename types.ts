@@ -1,3 +1,4 @@
+
 export interface UserProfile {
   name: string;
   birthDate: string;
@@ -8,7 +9,7 @@ export interface UserProfile {
 }
 
 export interface FortuneAnalysis {
-  yearlyFortune: string; // Detailed string
+  yearlyFortune: string;
   milestones: {
     timeframe: string;
     prediction: string;
@@ -27,6 +28,13 @@ export interface FortuneAnalysis {
   similarPerson: {
     name: string;
     description: string;
+  };
+  natalChart: {
+    personality: string;
+    career: string;
+    love: string;
+    marriage: string;
+    wealth: string;
   };
 }
 

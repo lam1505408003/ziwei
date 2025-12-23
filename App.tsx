@@ -1,32 +1,72 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import StarryBackground from './components/StarryBackground';
 import FileUpload from './components/FileUpload';
 import { UserProfile, FortuneAnalysis, ChatMessage } from './types';
 import { generateFortuneAnalysis, initializeChat, sendMessageToChat } from './services/geminiService';
 
-// Helper to calculate Zodiac sign from date string (YYYY-MM-DD)
 const getZodiacSign = (dateString: string): string => {
   if (!dateString) return "";
-  // Split manually to avoid timezone issues with new Date()
   const parts = dateString.split('-');
   if (parts.length !== 3) return "";
-  
   const month = parseInt(parts[1], 10);
   const day = parseInt(parts[2], 10);
-
-  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return "白羊座";
-  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return "金牛座";
-  if ((month === 5 && day >= 21) || (month === 6 && day <= 21)) return "双子座";
-  if ((month === 6 && day >= 22) || (month === 7 && day <= 22)) return "巨蟹座";
-  if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return "狮子座";
-  if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return "处女座";
-  if ((month === 9 && day >= 23) || (month === 10 && day <= 23)) return "天秤座";
-  if ((month === 10 && day >= 24) || (month === 11 && day <= 22)) return "天蝎座";
-  if ((month === 11 && day >= 23) || (month === 12 && day <= 21)) return "射手座";
-  if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return "摩羯座";
-  if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return "水瓶座";
-  return "双鱼座";
+  const signs = [
+    { name: "白羊座", start: [3, 21], end: [4, 19] },
+    { name: "金牛座", start: [4, 20], end: [5, 20] },
+    { name: "双子座", start: [5, 21], end: [6, 21] },
+    { name: "巨蟹座", start: [6, 22], end: [7, 22] },
+    { name: "狮子座", start: [7, 23], end: [8, 22] },
+    { name: "处女座", start: [8, 23], end: [9, 22] },
+    { name: "天秤座", start: [9, 23], end: [10, 23] },
+    { name: "天蝎座", start: [10, 24], end: [11, 22] },
+    { name: "射手座", start: [11, 23], end: [12, 21] },
+    { name: "摩羯座", start: [12, 22], end: [1, 19] },
+    { name: "水瓶座", start: [1, 20], end: [2, 18] },
+    { name: "双鱼座", start: [2, 19], end: [3, 20] }
+  ];
+  const sign = signs.find(s => {
+    const [sm, sd] = s.start;
+    const [em, ed] = s.end;
+    if (month === sm && day >= sd) return true;
+    if (month === em && day <= ed) return true;
+    return false;
+  });
+  return sign ? sign.name : "未知";
 };
+
+// 意境插画组件：用于展示本命底色
+const CosmicOrb = ({ color }: { color: string }) => (
+  <div className="relative w-full h-full min-h-[140px] flex items-center justify-center overflow-hidden rounded-2xl bg-slate-900/5">
+    <div className="absolute inset-0 opacity-40 blur-3xl animate-pulse" style={{ background: color }}></div>
+    <div className="relative w-24 h-24 rounded-full shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-transform duration-1000 group-hover:scale-110 overflow-hidden" style={{ background: `linear-gradient(135deg, ${color}, white, #f0f4ff)` }}>
+       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.8),transparent_60%)]"></div>
+       <div className="absolute bottom-[-20%] right-[-20%] w-[120%] h-[120%] bg-[conic-gradient(from_0deg,transparent,rgba(0,0,0,0.1),transparent)] animate-spin-slow"></div>
+    </div>
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+       <div className="w-full h-[1px] bg-white/20 rotate-45"></div>
+       <div className="w-full h-[1px] bg-white/20 -rotate-45"></div>
+    </div>
+  </div>
+);
+
+const BrandHeader = ({ size = "large" }: { size?: "small" | "large" }) => (
+  <div className={`flex flex-col items-center group ${size === 'small' ? 'mb-4' : 'mb-6'}`}>
+    <div className="relative flex items-center justify-center">
+      <div className="absolute inset-0 bg-white/40 blur-[40px] rounded-full scale-150 group-hover:scale-175 transition-transform duration-1000 opacity-80"></div>
+      <div className="relative flex flex-col items-center">
+        <svg viewBox="0 0 100 100" className={`${size === 'small' ? 'w-10 h-10' : 'w-20 h-20'} text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]`} fill="currentColor">
+          <path d="M50 10 C65 10 80 30 80 55 C80 80 65 90 50 90 C35 90 20 80 20 55 C20 30 35 10 50 10 Z" />
+          <path d="M50 10 C55 10 60 20 60 55 C60 80 55 90 50 90 C45 90 40 80 40 55 C40 20 45 10 50 10 Z" fill="rgba(255,255,255,0.4)" />
+          <circle cx="50" cy="90" r="3" fill="white" />
+        </svg>
+        <h1 className={`neon-gradient-text ${size === 'small' ? 'text-2xl' : 'text-6xl'} font-black tracking-tighter transition-all duration-500 group-hover:tracking-normal`}>
+          蒜蒜
+        </h1>
+      </div>
+    </div>
+  </div>
+);
 
 const App: React.FC = () => {
   const [view, setView] = useState<'input' | 'loading' | 'result'>('input');
@@ -43,17 +83,15 @@ const App: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = (field: keyof UserProfile, value: string | null) => {
     setProfile(prev => {
       const updated = { ...prev, [field]: value };
-      
-      // Auto-calculate zodiac when birthDate changes
       if (field === 'birthDate' && value) {
         updated.zodiac = getZodiacSign(value);
       }
-      
       return updated;
     });
   };
@@ -68,142 +106,92 @@ const App: React.FC = () => {
       const result = await generateFortuneAnalysis(profile);
       setAnalysis(result);
       initializeChat(profile, result);
-      // Add initial greeting from bot in Chinese
-      setMessages([{
-        role: 'model',
-        text: `您好，${profile.name}。星轨已定，面相已观。关于您的运势，或与您命运相似的古人 ${result.similarPerson.name}，请随意提问。`
-      }]);
+      setMessages([{ role: 'model', text: `星辰已归位，蒜蒜已为你推演完毕。` }]);
       setView('result');
     } catch (error) {
       console.error(error);
-      alert("星象连接失败 (API Error)。请重试。");
       setView('input');
     }
   };
 
   const handleChatSend = async () => {
     if (!chatInput.trim() || isChatLoading) return;
-    
     const userMsg = chatInput;
     setChatInput('');
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setIsChatLoading(true);
-
     try {
       const response = await sendMessageToChat(userMsg);
       if (response) {
         setMessages(prev => [...prev, { role: 'model', text: response }]);
       }
     } catch (error) {
-      console.error("Chat error", error);
-      setMessages(prev => [...prev, { role: 'model', text: "星辰信号微弱..." }]);
+      setMessages(prev => [...prev, { role: 'model', text: "链接波动，请稍后再试。" }]);
     } finally {
       setIsChatLoading(false);
     }
   };
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const resetApp = () => {
-    setProfile({
-      name: '',
-      birthDate: '',
-      birthTime: '',
-      zodiac: '',
-      faceImage: null,
-      earImage: null
-    });
-    setAnalysis(null);
-    setMessages([]);
-    setView('input');
-  };
-
-  // --- VIEWS ---
+    if (isChatOpen) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isChatOpen]);
 
   const LoadingView = () => (
-    <div className="flex flex-col items-center justify-center min-h-screen text-center p-8 z-10 relative">
-      <div className="relative w-32 h-32 mb-8">
-        <div className="absolute inset-0 border-4 border-purple-500/30 rounded-full animate-ping"></div>
-        <div className="absolute inset-2 border-4 border-t-purple-400 border-r-transparent border-b-purple-400 border-l-transparent rounded-full animate-spin"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl">✦</span>
-        </div>
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="floating-glass w-72 h-72 md:w-96 md:h-96 !rounded-full flex flex-col items-center justify-center text-center animate-float p-12">
+        <BrandHeader size="small" />
+        <h2 className="text-xl md:text-2xl font-black text-slate-700 tracking-tight mt-2">蒜蒜正在和宇宙链接</h2>
+        <p className="text-[9px] text-indigo-400 mt-2 font-bold uppercase tracking-widest opacity-60">Awaiting Cosmic Alignment</p>
       </div>
-      <h2 className="text-3xl font-serif text-white mb-4 tracking-[0.2em] animate-pulse">星运推演中</h2>
-      <p className="text-purple-300/60 font-sans font-light tracking-wide text-sm">
-        连接紫微星垣... <br/>
-        解析面相命宫...
-      </p>
     </div>
   );
 
   const InputView = () => (
-    <div className="min-h-screen flex items-center justify-center p-4 md:p-8 z-10 relative">
-      <div className="w-full max-w-xl bg-[#0B0216]/60 backdrop-blur-2xl border border-white/5 rounded-[2rem] p-6 md:p-10 shadow-[0_0_50px_rgba(76,29,149,0.2)]">
+    <div className="min-h-screen flex items-center justify-center p-6 relative">
+      <div className="absolute top-12 left-12 hidden md:flex flex-col gap-2 opacity-60">
+        <span className="text-[10px] font-black tracking-[0.3em] text-white">SUAN SUAN LAB</span>
+        <span className="text-[10px] font-black tracking-[0.3em] text-white">FUTURE PLAN 2025</span>
+      </div>
+      
+      <div className="w-full max-w-xl floating-glass p-12 md:p-16 animate-float">
         <div className="text-center mb-10">
-          <div className="inline-block p-3 rounded-full bg-purple-900/20 mb-4 border border-purple-500/20">
-            <span className="text-3xl">🔮</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-serif text-white mb-2 tracking-wider">
-            紫微星运
-          </h1>
-          <p className="text-purple-300/50 font-sans tracking-[0.2em] text-xs uppercase">AI Powered Destiny Analysis</p>
+          <BrandHeader />
         </div>
 
-        {/* Updated to Single Column Vertical Stack */}
-        <div className="flex flex-col gap-6 mb-10">
-          <div className="space-y-1">
-            <label className="text-purple-200/60 text-xs uppercase tracking-widest pl-1">姓名</label>
-            <input 
-              type="text" 
-              value={profile.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              className="w-full bg-black/20 border border-purple-500/20 rounded-xl p-3 text-white placeholder-purple-500/30 focus:outline-none focus:border-purple-400/50 focus:bg-purple-900/10 transition-all"
-              placeholder="请输入您的姓名"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-purple-200/60 text-xs uppercase tracking-widest pl-1">出生日期</label>
+        <div className="space-y-6">
+          <input 
+            type="text" 
+            placeholder="姓名 / NAME"
+            value={profile.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            className="w-full"
+          />
+          <div className="grid grid-cols-2 gap-4">
             <input 
               type="date" 
               value={profile.birthDate}
               onChange={(e) => handleInputChange('birthDate', e.target.value)}
-              className="w-full bg-black/20 border border-purple-500/20 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-purple-400/50 transition-all"
+              className="w-full"
             />
-          </div>
-          <div className="space-y-1">
-            <label className="text-purple-200/60 text-xs uppercase tracking-widest pl-1">出生时辰</label>
             <input 
               type="time" 
               value={profile.birthTime}
               onChange={(e) => handleInputChange('birthTime', e.target.value)}
-              className="w-full bg-black/20 border border-purple-500/20 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-purple-400/50 transition-all"
+              className="w-full"
             />
           </div>
-          {/* Zodiac input removed - automatically calculated */}
-
-          {/* Uploads in the same vertical stack */}
           <FileUpload 
-            label="上传面部照片 (面相)" 
+            label="" 
             currentImage={profile.faceImage}
             onChange={(val) => handleInputChange('faceImage', val)}
           />
-          <FileUpload 
-            label="上传耳朵照片 (可选)" 
-            currentImage={profile.earImage}
-            onChange={(val) => handleInputChange('earImage', val)}
-          />
+          <button 
+            onClick={startAnalysis}
+            className="w-full halo-button py-5 text-lg mt-6 tracking-widest uppercase"
+          >
+            开启推演
+          </button>
         </div>
-
-        <button 
-          onClick={startAnalysis}
-          className="group w-full relative overflow-hidden bg-purple-600 hover:bg-purple-500 text-white font-serif tracking-[0.2em] py-4 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.3)] transition-all duration-300 transform hover:scale-[1.01]"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-          <span className="relative z-10">开启命运轮盘</span>
-        </button>
       </div>
     </div>
   );
@@ -212,215 +200,191 @@ const App: React.FC = () => {
     if (!analysis) return null;
 
     return (
-      <div className="min-h-screen p-4 md:p-6 relative z-10 flex flex-col md:flex-row gap-6 max-w-[1600px] mx-auto">
-        
-        {/* Left Column: Analysis Dashboard */}
-        <div className="flex-[2] space-y-6 overflow-y-auto max-h-[calc(100vh-3rem)] custom-scrollbar pr-2">
+      <div className="min-h-screen py-10 md:py-20 px-4 md:px-6 overflow-x-hidden">
+        <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
           
-          {/* Header Card */}
-          <div className="flex items-center justify-between bg-[#150528]/80 backdrop-blur-xl p-8 rounded-[1.5rem] border border-white/5 shadow-lg">
-             <div className="flex items-center gap-6">
-                 {/* Back Button */}
-                 <button 
-                   onClick={resetApp}
-                   className="w-12 h-12 flex items-center justify-center rounded-full border border-white/10 bg-white/5 hover:bg-purple-500/20 text-purple-200 transition-all hover:scale-105"
-                   title="返回主页"
-                 >
-                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                   </svg>
-                 </button>
-                 <div>
-                   <h2 className="text-4xl font-serif text-white mb-2">{profile.name}</h2>
-                   <div className="flex items-center gap-3 text-purple-300/80 text-sm tracking-wide">
-                     <span className="uppercase">{profile.zodiac}</span>
-                     <span className="w-1 h-1 bg-purple-500 rounded-full"></span>
-                     <span>{profile.birthDate}</span>
-                   </div>
-                 </div>
-             </div>
-             <button onClick={resetApp} className="hidden md:block px-6 py-2 border border-purple-500/30 rounded-full text-sm hover:bg-purple-500/10 text-purple-200 transition-colors">
-                重新测算
-             </button>
-          </div>
-
-          {/* Grid for Soul Color & Similar Person */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Soul Color Aura */}
-            <div className="bg-[#150528]/80 backdrop-blur-xl p-6 rounded-[1.5rem] border border-blue-400/20 shadow-[0_0_30px_rgba(56,189,248,0.1)] relative overflow-hidden flex flex-col justify-center">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-              <div className="flex items-center gap-6 relative z-10">
-                  <div 
-                      className="w-20 h-20 shrink-0 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.6)] border border-white/20 relative"
-                      style={{ backgroundColor: analysis.personalityColor.hex, boxShadow: `0 0 20px ${analysis.personalityColor.hex}60` }}
-                  ></div>
-                  <div>
-                    <span className="text-blue-200/70 text-xs uppercase tracking-[0.2em] mb-1 block">灵魂气场色</span>
-                    <h3 className="text-2xl font-serif text-white mb-2">{analysis.personalityColor.name}</h3>
-                    <p className="text-gray-400 text-xs leading-relaxed italic line-clamp-3">
-                      "{analysis.personalityColor.meaning}"
-                    </p>
-                  </div>
-              </div>
+          {/* Top Profile Card - Wide */}
+          <div className="floating-glass p-8 md:p-10 text-center animate-float">
+            <div className="flex justify-between items-center mb-6">
+               <button 
+                onClick={() => setView('input')} 
+                className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-500 hover:text-indigo-700 transition-colors"
+               >
+                 <span className="w-5 h-5 rounded-full border border-indigo-200 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">←</span>
+                 BACK
+               </button>
+               <BrandHeader size="small" />
             </div>
-
-            {/* Historical Figure Card (New) */}
-            <div className="bg-[#150528]/80 backdrop-blur-xl p-6 rounded-[1.5rem] border border-pink-400/20 shadow-[0_0_30px_rgba(244,114,182,0.1)] relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl -ml-10 -mt-10 pointer-events-none"></div>
-              <div className="relative z-10 h-full flex flex-col justify-center">
-                 <div className="flex items-center gap-2 mb-2">
-                   <span className="text-lg">🏛️</span>
-                   <span className="text-pink-200/70 text-xs uppercase tracking-[0.2em]">命理映射 (Similar Historical Figure)</span>
-                 </div>
-                 <h4 className="text-2xl text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-purple-200 font-serif mb-2">{analysis.similarPerson.name}</h4>
-                 <p className="text-gray-400 text-xs leading-relaxed border-l-2 border-pink-500/30 pl-3 line-clamp-3">
-                    {analysis.similarPerson.description}
-                 </p>
-              </div>
+            <h2 className="text-6xl md:text-8xl font-black text-slate-800 tracking-tighter uppercase mb-4">{profile.name}</h2>
+            <div className="flex justify-center flex-wrap gap-2 md:gap-3">
+              <span className="px-5 py-1.5 bg-white/40 backdrop-blur border border-white/60 rounded-full text-[11px] font-black uppercase tracking-widest text-indigo-600 shadow-sm">{profile.zodiac}</span>
+              <span className="px-5 py-1.5 bg-white/40 backdrop-blur border border-white/60 rounded-full text-[11px] font-black uppercase tracking-widest text-pink-600 shadow-sm">{profile.birthDate}</span>
+              <span className="px-5 py-1.5 bg-white/40 backdrop-blur border border-white/60 rounded-full text-[11px] font-black uppercase tracking-widest text-amber-600 shadow-sm">{profile.birthTime || '未知时辰'}</span>
             </div>
           </div>
 
-          {/* Physiognomy Report */}
-          <div className="bg-[#150528]/80 backdrop-blur-xl rounded-[1.5rem] border border-purple-500/10 overflow-hidden">
-            <div className="p-6 border-b border-white/5 bg-white/5">
-               <h3 className="font-serif text-xl text-purple-200 tracking-widest">面相运势报告</h3>
-            </div>
+          {/* Grid Layout - Mixed sizes */}
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
             
-            <div className="p-6 space-y-6">
-              {/* Face Reading (Full Width) */}
-              <div className="bg-black/20 p-6 rounded-2xl border border-white/5 hover:border-purple-500/20 transition-colors">
-                <h4 className="text-white font-bold text-sm mb-3 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                  面相解析 (Face Reading)
-                </h4>
-                <p className="text-gray-400 text-sm leading-7">
-                  {analysis.physiognomy.faceAnalysis}
-                </p>
+            {/* 2025 Yearly - Wide Rect */}
+            <div className="md:col-span-4 floating-glass p-8 group hover:bg-white/30 transition-all flex flex-col justify-center">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">🌟</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">2025 年度总运 / YEARLY ORACLE</span>
               </div>
+              <h4 className="text-3xl font-black text-slate-800 mb-3">乙巳蛇年</h4>
+              <p className="text-sm font-bold text-slate-500 leading-loose opacity-90">{analysis.yearlyFortune}</p>
+            </div>
 
-              {/* Grid for Ear & Moles */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-black/20 p-6 rounded-2xl border border-white/5 hover:border-purple-500/20 transition-colors">
-                  <h4 className="text-white font-bold text-sm mb-3 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                    耳相运势 (Ear Fortune)
-                  </h4>
-                  <p className="text-gray-400 text-sm leading-relaxed">
-                    {analysis.physiognomy.earAnalysis}
-                  </p>
+            {/* Personality Color - Square */}
+            <div className="md:col-span-2 floating-glass p-6 group flex flex-col text-center">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 block">本命底色 / SOUL COLOR</span>
+              <CosmicOrb color={analysis.personalityColor.hex} />
+              <div className="mt-4">
+                <h4 className="text-xl font-black" style={{ color: analysis.personalityColor.hex }}>{analysis.personalityColor.name}</h4>
+                <p className="text-[10px] font-bold text-slate-400 mt-1">{analysis.personalityColor.meaning}</p>
+              </div>
+            </div>
+
+            {/* Career - Rect */}
+            <div className="md:col-span-3 floating-glass p-8 group border-l-4 border-indigo-400/30">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-2xl">💼</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">事业轨迹 / CAREER PATH</span>
+              </div>
+              <p className="text-sm font-bold text-slate-600 leading-relaxed">{analysis.natalChart.career}</p>
+            </div>
+
+            {/* Love - Rect */}
+            <div className="md:col-span-3 floating-glass p-8 group border-l-4 border-pink-400/30">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-2xl">❤️</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-pink-400">情缘定数 / DESTINY LOVE</span>
+              </div>
+              <p className="text-sm font-bold text-slate-600 leading-relaxed">{analysis.natalChart.love}</p>
+            </div>
+
+            {/* Wealth & Person - Two Squares/Small rects on mobile */}
+            <div className="md:col-span-3 floating-glass p-8 group bg-gradient-to-br from-white/20 to-amber-50/20">
+               <div className="flex items-center gap-3 mb-4">
+                <span className="text-2xl">💰</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500">财富格局 / WEALTH FLOW</span>
+              </div>
+              <p className="text-sm font-bold text-slate-600 leading-relaxed">{analysis.natalChart.wealth}</p>
+            </div>
+
+            <div className="md:col-span-3 floating-glass p-8 group">
+               <div className="flex items-center gap-3 mb-4">
+                <span className="text-2xl">🧩</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">命理映射 / HISTORICAL ECHO</span>
+              </div>
+              <h4 className="text-lg font-black text-slate-700 mb-1">{analysis.similarPerson.name}</h4>
+              <p className="text-xs font-bold text-slate-500 leading-relaxed">{analysis.similarPerson.description}</p>
+            </div>
+
+            {/* Milestones - Wide (Now before Physiognomy) */}
+            <div className="md:col-span-6 floating-glass p-8 group bg-slate-800/5">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-2xl">⏳</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">命运里程碑 / MILESTONES</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {analysis.milestones.map((m, idx) => (
+                  <div key={idx} className="p-4 bg-white/40 rounded-2xl border border-white/60">
+                    <span className="text-[10px] font-black text-indigo-400 mb-1 block">{m.timeframe}</span>
+                    <h5 className="font-black text-slate-700 mb-2">{m.prediction}</h5>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">建议：{m.advice}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Physiognomy - Wide (Now at the end) */}
+            <div className="md:col-span-6 floating-glass p-8 group">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">👤</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">面相解析 / PHYSIOGNOMY</span>
                 </div>
-                <div className="bg-black/20 p-6 rounded-2xl border border-white/5 hover:border-purple-500/20 transition-colors">
-                  <h4 className="text-white font-bold text-sm mb-3 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                    痣相寓意 (Mole Meanings)
-                  </h4>
-                  <p className="text-gray-400 text-sm leading-relaxed">
-                    {analysis.physiognomy.moleAnalysis}
-                  </p>
+                {profile.faceImage && <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm"><img src={profile.faceImage} className="w-full h-full object-cover" /></div>}
+              </div>
+              <p className="text-sm font-bold text-slate-600 leading-loose italic">"{analysis.physiognomy.faceAnalysis}"</p>
+            </div>
+          </div>
+
+          <div className="text-center py-10 opacity-40">
+            <p className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-800">Suan Suan Wisdom - Future Decoded</p>
+          </div>
+        </div>
+
+        {/* Floating AI Interaction */}
+        <button 
+          onClick={() => setIsChatOpen(true)}
+          className="fixed bottom-8 right-8 md:bottom-12 md:right-12 w-20 h-20 md:w-24 md:h-24 floating-glass !rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all cursor-pointer group z-layer-2 bg-white/40 border-2 border-white/80"
+        >
+          <span className="text-4xl md:text-5xl group-hover:animate-bounce">💬</span>
+          <div className="absolute inset-[-4px] rounded-full border-2 border-dashed border-indigo-400/20 animate-spin-slow"></div>
+        </button>
+
+        {isChatOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-indigo-900/10 backdrop-blur-3xl">
+            <div className="w-full max-w-xl h-[85vh] md:h-[75vh] flex flex-col floating-glass shadow-[0_0_100px_rgba(255,255,255,0.4)] overflow-hidden">
+              <div className="p-8 md:p-10 border-b border-white/20 flex justify-between items-center bg-white/10">
+                <div className="flex flex-col">
+                  <h3 className="font-black text-xl text-slate-700 tracking-tight">蒜蒜终端</h3>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Suan Suan Oracle V2.5</span>
+                </div>
+                <button onClick={() => setIsChatOpen(false)} className="w-10 h-10 rounded-full bg-white/40 flex items-center justify-center font-bold text-slate-400 hover:bg-white/60 transition-colors shadow-sm">✕</button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-8 md:p-10 space-y-8 custom-scrollbar bg-white/5">
+                {messages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[90%] p-6 rounded-3xl ${
+                      msg.role === 'user' 
+                        ? 'bg-indigo-500 text-white shadow-lg rounded-tr-none' 
+                        : 'bg-white/80 border border-white text-slate-700 shadow-sm rounded-tl-none backdrop-blur-sm'
+                    }`}>
+                      <p className="text-sm font-bold leading-relaxed">{msg.text}</p>
+                    </div>
+                  </div>
+                ))}
+                {isChatLoading && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce"></div>
+                    <div className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce delay-100"></div>
+                    <div className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce delay-200"></div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+              <div className="p-6 md:p-8 bg-white/30 border-t border-white/20 backdrop-blur">
+                <div className="flex gap-4">
+                  <input 
+                    type="text" 
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleChatSend()}
+                    placeholder="问问蒜蒜..."
+                    className="flex-1 !bg-white/60"
+                  />
+                  <button onClick={handleChatSend} className="halo-button px-6 md:px-8 py-3 uppercase text-xs">Send</button>
                 </div>
               </div>
             </div>
           </div>
-
-           {/* Yearly Fortune & Milestones */}
-           <div className="grid grid-cols-1 gap-6">
-              <div className="bg-[#150528]/80 backdrop-blur-xl p-8 rounded-[1.5rem] border border-yellow-500/10">
-                <h3 className="text-lg font-serif text-yellow-200/80 mb-4 flex items-center gap-2">
-                  <span className="text-xl">✦</span> 流年运势
-                </h3>
-                <p className="text-gray-300 leading-8">{analysis.yearlyFortune}</p>
-              </div>
-
-              <div className="bg-[#150528]/80 backdrop-blur-xl p-8 rounded-[1.5rem] border border-white/5">
-                 <h3 className="text-lg font-serif text-white mb-6">未来重要节点</h3>
-                 <div className="space-y-4">
-                    {analysis.milestones.map((m, idx) => (
-                      <div key={idx} className="flex gap-4 group">
-                        <div className="flex flex-col items-center">
-                           <div className="w-3 h-3 bg-purple-500 rounded-full ring-4 ring-purple-900/50 group-hover:bg-purple-400 transition-colors"></div>
-                           <div className="w-0.5 h-full bg-purple-900/50 my-2 group-last:hidden"></div>
-                        </div>
-                        <div className="pb-6">
-                           <span className="text-purple-400 text-xs font-bold tracking-wider uppercase bg-purple-900/30 px-2 py-1 rounded mb-2 inline-block">{m.timeframe}</span>
-                           <h4 className="text-gray-200 font-serif mb-1">{m.prediction}</h4>
-                           <p className="text-gray-500 text-sm">{m.advice}</p>
-                        </div>
-                      </div>
-                    ))}
-                 </div>
-              </div>
-           </div>
-
-        </div>
-
-        {/* Right Column: Interactive Chat - Sidebar Style */}
-        <div className="flex-1 min-w-[320px] max-w-md h-[calc(100vh-3rem)] sticky top-6 flex flex-col bg-[#0f0418]/90 backdrop-blur-2xl border border-purple-500/20 rounded-[1.5rem] shadow-2xl overflow-hidden">
-          <div className="p-5 border-b border-white/5 bg-gradient-to-r from-purple-900/20 to-transparent">
-             <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_#4ade80]"></div>
-                <h3 className="font-serif text-white tracking-[0.2em] text-sm">星运对话 (ORACLE CHAT)</h3>
-             </div>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar bg-black/20">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[90%] p-4 text-sm leading-relaxed shadow-lg ${
-                  msg.role === 'user' 
-                    ? 'bg-purple-600 text-white rounded-2xl rounded-tr-none' 
-                    : 'bg-[#1E0B36] text-gray-300 rounded-2xl rounded-tl-none border border-white/5'
-                }`}>
-                  {msg.text}
-                </div>
-              </div>
-            ))}
-            {isChatLoading && (
-               <div className="flex justify-start">
-                 <div className="bg-[#1E0B36] p-4 rounded-2xl rounded-tl-none border border-white/5 flex gap-2 items-center">
-                   <span className="text-xs text-gray-500">星辰思考中</span>
-                   <span className="flex gap-1">
-                     <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce"></span>
-                     <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce delay-75"></span>
-                     <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce delay-150"></span>
-                   </span>
-                 </div>
-               </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
-
-          <div className="p-4 bg-[#0B0216] border-t border-white/5">
-            <div className="relative group">
-              <input 
-                type="text" 
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleChatSend()}
-                placeholder="向星辰提问..."
-                className="w-full bg-[#1E0B36] border border-purple-500/20 rounded-xl pl-4 pr-12 py-4 text-sm text-white focus:outline-none focus:border-purple-500/50 focus:bg-[#250d42] transition-all"
-              />
-              <button 
-                onClick={handleChatSend}
-                disabled={!chatInput.trim()}
-                className="absolute right-2 top-2 p-2 text-purple-400 hover:text-white disabled:text-gray-600 transition-colors"
-              >
-                <svg className="w-5 h-5 transform rotate-90" fill="currentColor" viewBox="0 0 20 20">
-                   <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="relative min-h-screen text-white font-sans selection:bg-purple-500 selection:text-white overflow-x-hidden">
+    <div className="relative min-h-screen selection:bg-indigo-100 selection:text-indigo-600">
       <StarryBackground />
-      {view === 'input' && <InputView />}
-      {view === 'loading' && <LoadingView />}
-      {view === 'result' && <ResultView />}
+      <div className="relative z-layer-1">
+        {view === 'input' && <InputView />}
+        {view === 'loading' && <LoadingView />}
+        {view === 'result' && <ResultView />}
+      </div>
     </div>
   );
 };

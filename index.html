@@ -1,74 +1,120 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Nebula Destiny</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <title>蒜蒜 | 遇见未来的你</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#B1B7FF" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="蒜蒜" />
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/crystal-ball.png" />
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              serif: ['Cinzel', 'serif'],
-              sans: ['Lato', 'sans-serif'],
-            },
-            colors: {
-              'void-dark': '#0B0216',
-              'void-purple': '#1E0B36',
-              'mystic-accent': '#9F7AEA',
-              'star-gold': '#F6E05E',
-            },
-            animation: {
-              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              'float': 'float 6s ease-in-out infinite',
-            },
-            keyframes: {
-              float: {
-                '0%, 100%': { transform: 'translateY(0)' },
-                '50%': { transform: 'translateY(-10px)' },
-              }
-            }
-          }
-        }
-      }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=Noto+Sans+SC:wght@200;400;700;900&display=swap" rel="stylesheet">
+    
     <style>
+      :root {
+        --bg-main: #B1B7FF;
+        --glass-bg: rgba(255, 255, 255, 0.15);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --glow-color: rgba(255, 255, 255, 0.6);
+      }
       body {
-        background-color: #0B0216;
-        color: #E9D8FD;
+        background-color: var(--bg-main);
+        color: #2D3748;
+        font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 100vh;
         overflow-x: hidden;
       }
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
+      .floating-glass {
+        background: var(--glass-bg);
+        backdrop-filter: blur(60px) saturate(180%);
+        -webkit-backdrop-filter: blur(60px) saturate(180%);
+        border: 1px solid var(--glass-border);
+        border-radius: 48px;
+        box-shadow: 0 20px 80px rgba(0, 0, 0, 0.08), inset 0 0 20px var(--glow-color);
+        position: relative;
+        z-index: 10;
+        transition: transform 0.3s ease;
       }
-      ::-webkit-scrollbar-track {
-        background: #1E0B36; 
+      .halo-button {
+        background: white;
+        color: #6366f1;
+        font-weight: 800;
+        border-radius: 24px;
+        position: relative;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 10px 20px rgba(99, 102, 241, 0.15);
       }
-      ::-webkit-scrollbar-thumb {
-        background: #4C1D95; 
-        border-radius: 4px;
+      .halo-button::after {
+        content: "";
+        position: absolute;
+        inset: -4px;
+        border-radius: 28px;
+        background: linear-gradient(45deg, #818cf8, #c084fc);
+        z-index: -1;
+        opacity: 0;
+        filter: blur(12px);
+        transition: opacity 0.4s ease;
       }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #6D28D9; 
+      .halo-button:hover {
+        transform: translateY(-2px) scale(1.02);
       }
+      .halo-button:hover::after {
+        opacity: 0.5;
+      }
+      @keyframes floating {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
+      }
+      .animate-float { animation: floating 6s ease-in-out infinite; }
+      @keyframes spin-slow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-spin-slow { animation: spin-slow 12s linear infinite; }
+      input {
+        background: rgba(255, 255, 255, 0.3) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.5) !important;
+        border-radius: 20px !important;
+        padding: 14px 20px !important;
+        color: #1a202c !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+      }
+      .neon-gradient-text {
+        background: linear-gradient(to bottom, #FFFFFF 0%, #D4D7FF 50%, #B1B7FF 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.9));
+      }
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.4); border-radius: 10px; }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }
 </script>
 </head>
   <body>
     <div id="root"></div>
+    <!-- Vite 添加入口点 -->
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

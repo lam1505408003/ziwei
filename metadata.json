@@ -1,6 +1,6 @@
 {
-  "name": "Nebula Destiny - 紫微星运",
-  "description": "An AI-powered mystical fortune telling application using Zi Wei Dou Shu and physiognomy analysis.",
+  "name": "Suan Suan - 蒜蒜",
+  "description": "An AI-powered mystical fortune telling application.",
   "requestFramePermissions": [
     "camera"
   ]

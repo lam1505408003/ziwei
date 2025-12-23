@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 
 const StarryBackground: React.FC = () => {
@@ -14,53 +15,55 @@ const StarryBackground: React.FC = () => {
     canvas.width = width;
     canvas.height = height;
 
-    const stars: { x: number; y: number; size: number; opacity: number; speed: number; color: string }[] = [];
-    const numStars = 200;
-    const colors = ['#ffffff', '#ffe9c4', '#d4fbff', '#f0e6ff'];
-
-    for (let i = 0; i < numStars; i++) {
-      stars.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        size: Math.random() * 1.5,
-        opacity: Math.random(),
-        speed: Math.random() * 0.15 + 0.02,
-        color: colors[Math.floor(Math.random() * colors.length)]
-      });
+    interface Blob {
+      x: number;
+      y: number;
+      radius: number;
+      color: string;
+      targetX: number;
+      targetY: number;
+      speed: number;
     }
 
+    // 恢复为原始的明亮且柔和的光晕色块
+    const blobs: Blob[] = [
+      { x: width * 0.2, y: height * 0.2, radius: 800, color: 'rgba(255, 255, 255, 0.4)', targetX: Math.random() * width, targetY: Math.random() * height, speed: 0.0015 },
+      { x: width * 0.8, y: height * 0.1, radius: 700, color: 'rgba(236, 72, 153, 0.3)', targetX: Math.random() * width, targetY: Math.random() * height, speed: 0.001 },
+      { x: width * 0.5, y: height * 0.8, radius: 900, color: 'rgba(129, 140, 248, 0.3)', targetX: Math.random() * width, targetY: Math.random() * height, speed: 0.0008 },
+      { x: width * 0.9, y: height * 0.9, radius: 600, color: 'rgba(168, 85, 247, 0.2)', targetX: Math.random() * width, targetY: Math.random() * height, speed: 0.002 }
+    ];
+
     const animate = () => {
-      ctx.clearRect(0, 0, width, height);
-      
-      // Draw gradient background - Deep Universe
-      const gradient = ctx.createRadialGradient(width/2, height, 0, width/2, height/2, width);
-      gradient.addColorStop(0, '#1a0b2e'); // Deep purple near bottom/center
-      gradient.addColorStop(0.4, '#0f0518');
-      gradient.addColorStop(1, '#05010a'); // Almost black edges
-      
-      ctx.fillStyle = gradient;
+      // 恢复为明亮的浅紫色底色
+      ctx.fillStyle = '#B1B7FF';
       ctx.fillRect(0, 0, width, height);
 
-      // Draw stars
-      stars.forEach(star => {
-        ctx.fillStyle = star.color;
-        ctx.globalAlpha = star.opacity;
+      blobs.forEach(blob => {
+        blob.x += (blob.targetX - blob.x) * blob.speed;
+        blob.y += (blob.targetY - blob.y) * blob.speed;
+
+        if (Math.abs(blob.x - blob.targetX) < 10) blob.targetX = Math.random() * width;
+        if (Math.abs(blob.y - blob.targetY) < 10) blob.targetY = Math.random() * height;
+
+        const grad = ctx.createRadialGradient(blob.x, blob.y, 0, blob.x, blob.y, blob.radius);
+        grad.addColorStop(0, blob.color);
+        grad.addColorStop(1, 'rgba(177, 183, 255, 0)');
+        
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.arc(blob.x, blob.y, blob.radius, 0, Math.PI * 2);
         ctx.fill();
-
-        // Twinkle
-        star.opacity += (Math.random() - 0.5) * 0.02;
-        if (star.opacity < 0.1) star.opacity = 0.1;
-        if (star.opacity > 0.8) star.opacity = 0.8;
-
-        // Move
-        star.y -= star.speed;
-        if (star.y < 0) {
-          star.y = height;
-          star.x = Math.random() * width;
-        }
       });
+
+      // 绘制星星
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      for(let i=0; i<30; i++) {
+        const x = (Math.sin(Date.now() * 0.0001 + i) * 0.5 + 0.5) * width;
+        const y = (Math.cos(Date.now() * 0.00015 + i) * 0.5 + 0.5) * height;
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       requestAnimationFrame(animate);
     };
