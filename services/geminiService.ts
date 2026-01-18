@@ -1,9 +1,11 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { UserProfile, FortuneAnalysis } from "../types";
 
-// Initialize the client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+// 全局会话变量，用于跟踪聊天上下文
+let chatSession: Chat | null = null;
 
 const extractBase64 = (dataUrl: string) => {
   return dataUrl.split(',')[1];
@@ -17,34 +19,37 @@ export const generateFortuneAnalysis = async (profile: UserProfile): Promise<For
   const parts: any[] = [];
 
   let promptText = `
-    你是一位精通紫微斗数、子平八字和传统面相学的当代命理大师，你的代号是“蒜蒜”。
+    你是一位殿堂级的命理导师“蒜蒜”，精通子平八字、紫微斗数与现代心理占星。
     
-    用户信息：
-    姓名：${profile.name}
-    出生日期：${profile.birthDate}
-    出生时辰：${profile.birthTime}
-    星座：${profile.zodiac}
+    【核心指令：严禁幻觉】
+    用户出生数据：姓名：${profile.name}，日期：${profile.birthDate}，时间：${profile.birthTime}。
+    
+    在进行推演前，你必须在内心严格执行以下逻辑：
+    1. **四柱排盘**：根据出生日期计算出精准的年、月、日、时四柱。
+    2. **日主校验**：识别日柱天干（日元）。确保日主属性推导绝对正确。
+    3. **严禁错误**：如果你无法确定干支，请以万年历标准为准。
 
-    请提供一份专业且深度的命理分析，语言使用简体中文。
+    【输出文风与内容深度规范】
+    你必须保持“专业、详尽、温情”的平衡感。用户反馈此前的分析内容过少，因此在本次推演中：
     
-    1. **本命盘解析 (Natal Chart Analysis)**：从大师视角深度剖析：
-       - **性格**：内在特质、潜能与底层本色。
-       - **事业**：职业路径、领导力、适合行业。
-       - **爱情**：情感风格、桃花规律。
-       - **婚姻**：婚姻稳定性、理想伴侣特质。
-       - **财富**：财库容量、赚钱机遇、守财建议。
-       
-    2. **今年运势 (Yearly Fortune)**：请务必针对 **2025乙巳蛇年** 进行紫微流年大运预测。
-    3. **命运里程碑 (Milestones)**：确定未来几个重要的时间节点（具体年份和事件）。
-    4. **面相解析 (Physiognomy)**：根据提供的面部特征进行命理推演。
-    5. **灵魂底色 (Personality Color)**：提供一个对应的 HEX 颜色代码，并起一个富有诗意的中文名及含义。
-    6. **命理映射 (Similar Person)**：寻找一位历史上命格相似的人物进行映射。
+    1. **五行核心能量 (深度要求)**：
+       - **nature (性格优势)**：严禁只给出一句短语。请提供至少3个维度的深刻剖析（如：精神内核、行动模式、思维优势），字数应在100字左右。
+       - **supplement (增运补救)**：提供至少3条具体的、可实操的转运建议（涵盖颜色、方位、社交行为、环境能量等）。
+       - **taboos (重点避坑)**：列举至少3个在职场、人际、心态上必须警惕的死穴或负面磁场。
     
-    以严格的 JSON 格式返回，符合 Schema 要求。
+    2. **三段式结构**：针对每一项分析（流年、事业、感情、财富）必须强制包含：
+       - **【总体概况】**：对该维度的现状定性。
+       - **【潜力与机遇】**：挖掘正向闪光点或即将到来的好运。
+       - **【避坑指南】**：指出潜在风险或性格盲点。
+
+    3. **全篇严禁英文**：不允许出现任何英文单词、缩写或标点。
+    4. **大运节点**：给出3个关键大运（格式：XXXX年-XXXX年）。
+
+    请严格以 JSON 格式返回。
   `;
 
   if (profile.faceImage) {
-    promptText += "\n已附带面相照片，请针对五官、气色和痣相进行详细分析。";
+    promptText += "\n已附带面相数据。请结合面部的三停五岳、神采气色，对八字推演结果进行校准。";
     parts.push({
       inlineData: {
         data: extractBase64(profile.faceImage),
@@ -56,7 +61,7 @@ export const generateFortuneAnalysis = async (profile: UserProfile): Promise<For
   parts.push({ text: promptText });
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-pro-preview',
     contents: { parts },
     config: {
       responseMimeType: "application/json",
@@ -64,6 +69,17 @@ export const generateFortuneAnalysis = async (profile: UserProfile): Promise<For
         type: Type.OBJECT,
         properties: {
           yearlyFortune: { type: Type.STRING },
+          fiveElements: {
+            type: Type.OBJECT,
+            properties: {
+              element: { type: Type.STRING },
+              nature: { type: Type.STRING },
+              strength: { type: Type.STRING },
+              supplement: { type: Type.STRING },
+              taboos: { type: Type.STRING }
+            },
+            required: ["element", "nature", "strength", "supplement", "taboos"]
+          },
           milestones: {
             type: Type.ARRAY,
             items: {
@@ -83,13 +99,14 @@ export const generateFortuneAnalysis = async (profile: UserProfile): Promise<For
               moleAnalysis: { type: Type.STRING }
             }
           },
-          personalityColor: {
+          interpersonal: {
             type: Type.OBJECT,
             properties: {
-              hex: { type: Type.STRING },
-              name: { type: Type.STRING },
-              meaning: { type: Type.STRING }
-            }
+              style: { type: Type.STRING },
+              connection: { type: Type.STRING },
+              caution: { type: Type.STRING }
+            },
+            required: ["style", "connection", "caution"]
           },
           similarPerson: {
             type: Type.OBJECT,
@@ -114,37 +131,33 @@ export const generateFortuneAnalysis = async (profile: UserProfile): Promise<For
     }
   });
 
-  if (!response.text) {
-    throw new Error("生成分析报告失败。");
+  const responseText = response.text;
+  if (!responseText) {
+    throw new Error("推演中断，请重新链接。");
   }
 
-  return JSON.parse(response.text) as FortuneAnalysis;
+  return JSON.parse(responseText.trim()) as FortuneAnalysis;
 };
-
-let chatSession: any = null;
 
 export const initializeChat = (profile: UserProfile, analysis: FortuneAnalysis) => {
   const systemInstruction = `
-    你是一位神秘的 AI 命理官，名叫“蒜蒜”。
-    用户：${profile.name}，星座：${profile.zodiac}。
-    2025年核心运势：${analysis.yearlyFortune}。
+    你是一位专业且温情的 AI 命理导师“蒜蒜”。
     
-    请使用简体中文回答后续问题。
-    语气：庄重、富有禅意且充满智慧，偶尔带有一点赛博朋克的冷峻感。回答要简练而深刻。
+    【核心规则】：
+    1. 遵循“三段式”分析（总览+优势+避坑）。
+    2. 针对五行分析，必须给出多维度的详细建议，不能只是几个词。
+    3. 全程禁止输出英文。
+    4. 始终围绕用户的日主属性 ${analysis.fiveElements.element} 进行专业且人性化的解答。
   `;
 
   chatSession = ai.chats.create({
     model: 'gemini-3-pro-preview',
-    config: {
-      systemInstruction: systemInstruction,
-    }
+    config: { systemInstruction }
   });
 };
 
 export const sendMessageToChat = async (message: string) => {
-  if (!chatSession) {
-    throw new Error("会话尚未初始化");
-  }
+  if (!chatSession) throw new Error("会话尚未初始化");
   const response = await chatSession.sendMessage({ message });
   return response.text;
 };

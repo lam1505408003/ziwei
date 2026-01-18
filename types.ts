@@ -20,10 +20,10 @@ export interface FortuneAnalysis {
     earAnalysis: string;
     moleAnalysis: string;
   };
-  personalityColor: {
-    hex: string;
-    name: string;
-    meaning: string;
+  interpersonal: {
+    style: string;      // 社交风格
+    connection: string; // 贵人/人脉情况
+    caution: string;    // 社交注意点
   };
   similarPerson: {
     name: string;
@@ -35,6 +35,13 @@ export interface FortuneAnalysis {
     love: string;
     marriage: string;
     wealth: string;
+  };
+  fiveElements: {
+    element: string;      // 五行属性 (如：乙木)
+    nature: string;       // 形象描述 (如：花草之木)
+    strength: string;     // 能量强度 (如：身强、身弱、中和)
+    supplement: string;   // 补益建议
+    taboos: string;       // 注意事项
   };
 }
 
